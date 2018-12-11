@@ -1,33 +1,47 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow} = require('electron')
+const { app, BrowserWindow } = require('electron')
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
-let mainWindow
-
-function createWindow () {
-  // Create the browser window.
-  mainWindow = new BrowserWindow({width: 800, height: 600})
-
-  // and load the index.html of the app.
-  mainWindow.loadFile('index.html')
-
-  // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
-
-  // Emitted when the window is closed.
-  mainWindow.on('closed', function () {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    mainWindow = null
-  })
+var _browserWindowOptions = {
+  width: 1024,
+  height: 768,
+  show: false,
+  webPreferences: {
+    nodeIntegration: false
+  }
 }
+
+var _urls = ["https://chicago.craigslist.org/", "https://chicago.craigslist.org/d/antiques/search/ata", "https://google.com",];
+
+function createWindows() {
+  var win1 = new BrowserWindow(_browserWindowOptions);
+  var win2 = new BrowserWindow(_browserWindowOptions);
+
+  win1.loadURL(_urls[0]);
+  win1.webContents.once("did-finish-load", function () {
+    win1.webContents.setZoomLevel(0);
+    win1.setPosition(100, 100);
+    win1.show();
+  });
+
+  setTimeout(function () {
+    win2.loadURL(_urls[1]);  // change the index to [2] (google.com) to see that the issue doesn't happen for a URL with different domain
+    win2.webContents.once("did-finish-load", function () {
+      win2.webContents.setZoomLevel(0);
+      win2.setPosition(350, 150);
+      win2.show();
+
+      setTimeout(function () {
+        win1.webContents.setZoomLevel(5);  // setting zoom level here on win1 causes the zoom level to also change for win2 if win2's URL has the same domain
+      }, 3000);
+    })
+  }, 5000);
+}
+
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on('ready', createWindow)
+app.on('ready', createWindows)
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function () {
@@ -35,14 +49,6 @@ app.on('window-all-closed', function () {
   // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== 'darwin') {
     app.quit()
-  }
-})
-
-app.on('activate', function () {
-  // On macOS it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (mainWindow === null) {
-    createWindow()
   }
 })
 
